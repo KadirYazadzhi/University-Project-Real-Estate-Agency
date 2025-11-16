@@ -1,10 +1,8 @@
-/**
- * @file reports.cpp
- * @brief Съдържа функции за генериране на различни видове справки.
- */
+
 
 #include <iostream>
 #include <cstring>
+#include <iomanip>
 
 #include "reports.h"
 #include "structs.h"
@@ -14,21 +12,24 @@
 
 using namespace std;
 
-// Дефинираме константа за максимален брой уникални брокери, равна на макс. брой имоти.
+
 #define MAX_UNIQUE_BROKERS MAX_PROPERTIES
 
-/**
- * @brief Намира и извежда най-скъпия имот в зададен от потребителя район.
- */
+
 void mostExpensiveInArea() {
-    cout << CYAN << "Въведете района за който желаете да бъде направена справката: " << RESET;
+    if (propertyCount == 0) {
+        cout << YELLOW << "No properties entered into the system." << RESET << endl;
+        return;
+    }
+
+    cout << CYAN << "Enter the area for which you want to generate the report: " << RESET;
     char searchArea[50];
     cin.getline(searchArea, 50);
 
     double maxPrice = -1.0;
     int mostExpensiveIndex = -1;
 
-    // Обхождаме всички имоти и търсим този с най-висока цена в дадения район
+
     for (int i = 0; i < propertyCount; i++) {
         if (strcmp(properties[i].area, searchArea) == 0) {
             if (properties[i].price > maxPrice) {
@@ -40,26 +41,29 @@ void mostExpensiveInArea() {
 
     if (mostExpensiveIndex == -1) {
         cout << endl;
-        cout << RED << "Не беше намерен имот в този район." << RESET << endl;
+        cout << RED << "No property found in this area." << RESET << endl;
         return;
     }
 
-    cout << YELLOW << "\n--- Най-скъпият имот в район " << searchArea << " ---" << RESET << endl;
+    cout << YELLOW << "\n--- Most expensive property in area " << searchArea << " ---" << RESET << endl;
     displayPropertyDetails(properties[mostExpensiveIndex]);
 }
 
-/**
- * @brief Изчислява и извежда средната цена на имотите в зададен от потребителя район.
- */
+
 void averagePriceInArea() {
-    cout << CYAN << "Въведете района за който желаете да бъде направена справката: " << RESET;
+    if (propertyCount == 0) {
+        cout << YELLOW << "No properties entered into the system." << RESET << endl;
+        return;
+    }
+
+    cout << CYAN << "Enter the area for which you want to generate the report: " << RESET;
     char searchArea[50];
     cin.getline(searchArea, 50);
 
     double totalPrice = 0.0;
     int totalPropertyCount = 0;
 
-    // Сумираме цените на всички имоти в дадения район и броим колко са
+
     for (int i = 0; i < propertyCount; i++) {
         if (strcmp(properties[i].area, searchArea) == 0) {
             totalPrice += properties[i].price;
@@ -68,22 +72,25 @@ void averagePriceInArea() {
     }
 
     if (totalPropertyCount == 0) {
-        cout << RED << "Не бяха намерени имоти в този район." << RESET << endl;
+        cout << RED << "No properties found in this area." << RESET << endl;
         return;
     }
 
-    cout << YELLOW << "\n--- Бяха намерени " << totalPropertyCount << " имота с обща стойност " << totalPrice << " ---" << RESET << endl;
-    cout << "Средната цена за имот в " << searchArea << " район е " << totalPrice / totalPropertyCount << "." << endl;
+    cout << YELLOW << "\n--- Found " << totalPropertyCount << " properties with a total value of " << totalPrice << " ---" << RESET << endl;
+    cout << "The average price per property in area '" << searchArea << "' is " << fixed << setprecision(2) << totalPrice / totalPropertyCount << "." << endl;
 }
 
-/**
- * @brief Изчислява и извежда процента на продадените имоти за всеки брокер.
- */
+
 void soldPercentagePerBroker() {
+    if (propertyCount == 0) {
+        cout << YELLOW << "No properties entered into the system." << RESET << endl;
+        return;
+    }
+
     char uniqueBrokers[MAX_UNIQUE_BROKERS][50];
     int uniqueBrokerCount = 0;
 
-    // Първа стъпка: намираме всички уникални имена на брокери
+
     for (int i = 0; i < propertyCount; i++) {
         bool uniqueBrokerFound = true;
         for (int j = 0; j < uniqueBrokerCount; j++) {
@@ -98,13 +105,13 @@ void soldPercentagePerBroker() {
                 strcpy(uniqueBrokers[uniqueBrokerCount], properties[i].broker);
                 uniqueBrokerCount++;
             }
-            else break; // Достигнат е лимитът на уникални брокери
+
         }
     }
 
-    cout << YELLOW << "\n--- Процент Продадени Имоти по Брокер ---" << RESET << endl;
+    cout << YELLOW << "\n--- Percentage of Properties Sold per Broker ---" << RESET << endl;
 
-    // Втора стъпка: за всеки уникален брокер, броим общия и продадения брой имоти
+
     for (int i = 0; i < uniqueBrokerCount; i++) {
         int totalBrokerProperties = 0;
         int soldBrokerProperties = 0;
@@ -123,9 +130,11 @@ void soldPercentagePerBroker() {
             soldBrokerPercentage = ((double)soldBrokerProperties / totalBrokerProperties) * 100.0;
         }
 
-        cout << "Брокер: " << uniqueBrokers[i] << endl;
-        cout << "   Общо имоти: " << totalBrokerProperties << endl;
-        cout << "   Продадени: " << soldBrokerProperties << endl;
-        cout << "   Процент продадени: " << soldBrokerPercentage << "%" << endl;
+        cout << "Broker: " << uniqueBrokers[i] << endl;
+        cout << left;
+        cout << "  " << setw(20) << "Total Properties:" << totalBrokerProperties << endl;
+        cout << "  " << setw(20) << "Sold:" << soldBrokerProperties << endl;
+        cout << "  " << setw(20) << "Percentage Sold:" << fixed << setprecision(2) << soldBrokerPercentage << "%" << endl;
+        cout << endl;
     }
 }

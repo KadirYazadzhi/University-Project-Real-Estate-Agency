@@ -1,57 +1,45 @@
-/**
- * @file update.cpp
- * @brief Съдържа функции за редакция на данни на съществуващи имоти.
- */
+
 
 #include <iostream>
 #include <cstring>
 #include <limits>
+#include <string>
+#include <iomanip>
 
 #include "structs.h"
 #include "update.h"
 #include "file.h"
 #include "colors.h"
 
+
 using namespace std;
 
-/**
- * @brief Главно меню за редакция на имот.
- * 
- * Намира имот по референтен номер и предоставя меню с опции за редакция на отделните му полета.
- */
+
 void updateProperty() {
-    cout << CYAN << "Въведете реф. номер на имота, който искате да коригирате: " << RESET;
-    int refNumber;
-    cin >> refNumber;
+    int refNumber = getValidNumericInput<int>(CYAN "Enter the reference number of the property you want to edit: " RESET);
 
     int index = getPropertyByRefNumber(refNumber);
     if (index == -1) {
-        cout << RED << "Не беше намерен имот с реф. номер - " << refNumber << "." << RESET << endl;
+        cout << RED << "No property found with ref. number - " << refNumber << "." << RESET << endl;
         return;
     }
 
-    // Проверка дали имотът е продаден - продаден имот не може да се редактира.
+
     if (properties[index].status == SOLD) {
-        cout << RED << "Невалидна операция, имота е вече продаден - (Продаден имот не може да бъде редактиран)." << RESET << endl;
+        cout << RED << "Invalid operation, the property is already sold - (A sold property cannot be edited)." << RESET << endl;
         return;
     }
 
-    cout << CYAN << "Изберете кое искате да промените: " << RESET << endl;
-    cout << "1. Реф. Номер" << endl;
-    cout << "2. Брокер" << endl;
-    cout << "3. Тип" << endl;
-    cout << "4. Район" << endl;
-    cout << "5. Изложение" << endl;
-    cout << "6. Цена" << endl;
-    cout << "7. Обща площ" << endl;
-    cout << "8. Брой стаи" << endl;
-    cout << "9. Етаж" << endl;
-    cout << "10. Статус" << endl;
-    cout << "0. Назад" << endl;
-    cout << CYAN << "Въведете вашия избор: " << RESET;
+    cout << CYAN << "Choose what you want to change: " << RESET << endl;
+    cout << left;
+    cout << "  " << setw(15) << "1. Ref. Number" << "6. Price" << endl;
+    cout << "  " << setw(15) << "2. Broker" << "7. Total Area" << endl;
+    cout << "  " << setw(15) << "3. Type" << "8. Number of Rooms" << endl;
+    cout << "  " << setw(15) << "4. Area" << "9. Floor" << endl;
+    cout << "  " << setw(15) << "5. Exposition" << "10. Status" << endl;
+    cout << "  " << "0. Back" << endl;
 
-    int choice;
-    cin >> choice;
+    int choice = getValidNumericInput<int>(CYAN "Enter your choice: " RESET);
 
     switch (choice) {
         case 1: updateRefNumber(index); break;
@@ -64,133 +52,101 @@ void updateProperty() {
         case 8: updateNumericField(&properties[index].rooms, "брой стаи"); break;
         case 9: updateNumericField(&properties[index].floor, "етаж"); break;
         case 10: updateStatus(index); break;
-        default: return;
+        case 0: return;
+        default:
+            cout << RED << "Invalid option." << RESET << endl;
+            break;
     }
 }
 
-/**
- * @brief Актуализира референтния номер на имот.
- * @param index Индексът на имота в глобалния масив `properties`.
- */
+
 void updateRefNumber(int index) {
-    cout << CYAN << "Въведете новия референтен номер: " << RESET;
-    int newRefNumber;
-    cin >> newRefNumber;
+    int newRefNumber = getValidNumericInput<int>(CYAN "Enter the new reference number: " RESET);
 
     if (getPropertyByRefNumber(newRefNumber) != -1) {
-        cout << RED << "Невалидна операция. Вече съществува имот с този референтен номер." << RESET << endl;
+        cout << RED << "Invalid operation. A property with this reference number already exists." << RESET << endl;
         return;
     }
 
     properties[index].refNumber = newRefNumber;
-    syncDataToRecoveryFiles(); // Синхронизация след промяна
+    cout << GREEN << "Reference number successfully changed." << RESET << endl;
+    syncDataToRecoveryFiles();
 }
 
-/**
- * @brief Актуализира текстово поле на имот.
- * @param index Индексът на имота.
- * @param fieldPtr Указател към полето (напр. `properties[index].broker`).
- * @param maxSize Максимален размер на полето.
- * @param fieldName Име на полето за извеждане в съобщенията.
- */
+
 void updateStringField(int index, char* fieldPtr, int maxSize, const char* fieldName) {
-    cout << CYAN << "Въведете нова стойност за " << fieldName << " (до " << maxSize << "символа): " << RESET;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
+    cout << CYAN << "Enter new value for " << fieldName << " (up to " << maxSize -1 << " characters): " << RESET;
+    
     char newValue[MAX_STRING_SIZE];
-    cin.getline(newValue, maxSize);
+    cin.getline(newValue, sizeof(newValue));
 
-    if (strcmp(fieldPtr, newValue) == 0) {
-        cout << YELLOW << "Въведената стойност е идентична с текущата. Не е направена промяна." << RESET << endl;
+        cout << YELLOW << "The entered value is identical to the current one. No change was made." << RESET << endl;
         return;
     }
 
-    strcpy(fieldPtr, newValue);
-
-    cout << GREEN << "Стойността за " << fieldName << " беше успешно променена." << RESET << endl;
-    syncDataToRecoveryFiles(); // Синхронизация след промяна
+    cout << GREEN << "Value for " << fieldName << " successfully changed." << RESET << endl;
+    syncDataToRecoveryFiles();
 }
 
-/**
- * @brief Шаблонна функция за актуализация на числово поле.
- * @tparam T Типът на числовото поле (int, double).
- * @param fieldPtr Указател към полето.
- * @param fieldName Име на полето за извеждане в съобщенията.
- */
+
 template <typename T>
 void updateNumericField(T* fieldPtr, const char* fieldName) {
-    cout << CYAN << "Въведете нова стойност за " << fieldName << ":" << RESET;
-
-    T newValue;
-    if (!(cin >> newValue)) {
-        cout << RED << "Невалиден вход. Операцията е отменена." << RESET << endl;
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        return;
-    }
+    string prompt = string(CYAN) + "Enter new value for " + fieldName + ": " + RESET;
+    T newValue = getValidNumericInput<T>(prompt.c_str());
 
     if (*fieldPtr == newValue) {
-        cout << YELLOW << "Въведената стойност е идентична с текущата. Не е направена промяна." << RESET << endl;
+        cout << YELLOW << "The entered value is identical to the current one. No change was made." << RESET << endl;
         return;
     }
 
     *fieldPtr = newValue;
-    cout << GREEN << "Стойността за " << fieldName << " беше успешно променена." << RESET << endl;
-    syncDataToRecoveryFiles(); // Синхронизация след промяна
+    cout << GREEN << "Value for " << fieldName << " successfully changed." << RESET << endl;
+    syncDataToRecoveryFiles();
 }
 
-/**
- * @brief Актуализира статуса на имот.
- * При промяна от AVAILABLE на RESERVED, цената се намалява с 20%.
- * @param index Индексът на имота.
- */
+
 void updateStatus(int index) {
     Status oldStatus = properties[index].status;
 
-    cout << CYAN << "Изберете новия статус: " << RESET;
-    cout << "   1. Наличен" << endl;
-    cout << "   2. Продаден" << endl;
-    cout << "   3. Капариран" << endl;
-    cout << CYAN << "Въведете вашия избор: " << RESET;
-
+    cout << CYAN << "Choose new status: " << RESET << endl;
+    cout << left;
+    cout << "  " << setw(15) << "1. Available" << endl;
+    cout << "  " << setw(15) << "2. Sold" << endl;
+    cout << "  " << setw(15) << "3. Reserved" << endl;
+    
     int choice;
-    if (!(cin >> choice) || choice < 0 || choice > 3) {
-        cout << RED << "Невалиден избор. Операцията е отменена." << RESET << endl;
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        return;
+    while (true) {
+        choice = getValidNumericInput<int>(CYAN "Enter your choice: " RESET);
+        if (choice >= 1 && choice <= 3) {
+            break;
+        }
+        cout << RED << "Invalid choice. Please choose 1, 2 or 3." << RESET << endl;
     }
 
     Status newStatus;
-
     switch (choice) {
         case 1: newStatus = AVAILABLE; break;
         case 2: newStatus = SOLD; break;
         case 3: newStatus = RESERVED; break;
-        default: return;
     }
 
     if (oldStatus == newStatus) {
-        cout << YELLOW << "Имотът вече е в избрания статус. Не беше направена промяна." << RESET << endl;
+        cout << YELLOW << "The property is already in the selected status. No change was made." << RESET << endl;
         return;
     }
 
-    // Ако имотът се капарира, цената се актуализира с 20% надолу.
+
     if (oldStatus == AVAILABLE && newStatus == RESERVED) {
         properties[index].price *= 0.8;
+        cout << YELLOW << "The price of the property has been reduced by 20% due to the status change to 'Reserved'." << RESET << endl;
     }
 
     properties[index].status = newStatus;
-    cout << GREEN << "Статуса беше успешно променен" << RESET << endl;
-    syncDataToRecoveryFiles(); // Синхронизация след промяна
+    cout << GREEN << "Status successfully changed." << RESET << endl;
+    syncDataToRecoveryFiles();
 }
 
-/**
- * @brief Намира индекса на имот по неговия референтен номер.
- * 
- * @param refNumber Референтният номер за търсене.
- * @return int Индексът на имота в масива, или -1 ако не е намерен.
- */
+
 int getPropertyByRefNumber(int refNumber) {
     for (int i = 0; i < propertyCount; i++) {
         if (properties[i].refNumber == refNumber) return i;

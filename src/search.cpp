@@ -1,10 +1,4 @@
-/**
- * @file search.cpp
- * @brief Съдържа функции за търсене, филтриране и сортиране на имоти по зададени критерии.
- *
- * Функциите в този файл не променят основния масив с данни, а създават временни копия,
- * които се обработват и извеждат на екрана.
- */
+
 
 #include <iostream>
 #include <limits>
@@ -17,15 +11,17 @@
 #include "sort.h"
 #include "colors.h"
 
+
 using namespace std;
 
-/**
- * @brief Търси имоти по име на брокер, след което ги сортира по цена.
- */
-void searchByBroker() {
-    cout << CYAN << "Въведете името на брокера за който желаете да се направи търсенето: " << RESET;
-    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
+void searchByBroker() {
+    if (propertyCount == 0) {
+        cout << YELLOW << "No properties entered into the system." << RESET << endl;
+        return;
+    }
+
+    cout << CYAN << "Enter the name of the broker you wish to search for: " << RESET;
     char searchBroker[50];
     cin.getline(searchBroker, 50);
 
@@ -33,7 +29,7 @@ void searchByBroker() {
     int tempCount = 0;
     bool isFound = false;
 
-    // 1. Копираме всички имоти на дадения брокер във временен масив
+
     for (int i = 0; i < propertyCount; i++) {
         if (strcmp(searchBroker, properties[i].broker) == 0) {
             tempProperties[tempCount] = properties[i];
@@ -43,48 +39,51 @@ void searchByBroker() {
     }
 
     if (!isFound) {
-        cout << RED << "Не са намерени имоти за брокер " << searchBroker << "." << RESET << endl;
+        cout << RED << "No properties found for broker '" << searchBroker << "'." << RESET << endl;
         return;
     }
 
-    // 2. Потребителят избира посока на сортиране
-    cout << CYAN << "Изберете как да бъде подреден масива по цена [Възходящ/Низходящ] ред: " << RESET;
-    string searchType;
-    cin >> searchType;
 
-    transform(searchType.begin(), searchType.end(), searchType.begin(),
-        [](unsigned char c){ return std::tolower(c); });
+    cout << CYAN << "Select sorting order by price:" << RESET << endl;
+    cout << "  1. Ascending (lowest to highest)" << endl;
+    cout << "  2. Descending (highest to lowest)" << endl;
+    
+    int choice;
+    bool isAscending;
+    while (true) {
+        choice = getValidNumericInput<int>(CYAN "Enter your choice: " RESET);
+        if (choice == 1 || choice == 2) {
+            isAscending = (choice == 1);
+            break;
+        }
+        cout << RED << "Invalid choice. Please choose 1 or 2." << RESET << endl;
+    }
 
-    bool isAscending = true;
 
-    if (searchType == "низходящ") isAscending = false;
-    else if (searchType == "възходящ") isAscending = true;
-    else cout << YELLOW << "Невалиден избор. Сортирането ще бъде изпълнено във възходящ ред." << RESET << endl;
-
-    // 3. Сортираме временния масив
     sortPropertiesArray(tempProperties, tempCount, isAscending);
 
-    // 4. Извеждаме сортираните резултати
-    cout << YELLOW << "\n--- Резултати за брокер " << searchBroker << " (Сортирани) ---" << RESET << endl;
+
+    cout << YELLOW << "\n--- Results for broker '" << searchBroker << "' (Sorted by price) ---" << RESET << endl;
     for (int i = 0; i < tempCount; i++) {
-        cout << YELLOW << "--- Имот #" << i + 1 << RESET << endl;
+        cout << YELLOW << "--- Property #" << i + 1 << RESET << endl;
         displayPropertyDetails(tempProperties[i]);
     }
 }
 
-/**
- * @brief Търси имоти по брой стаи, след което ги сортира по цена в низходящ ред.
- */
+
 void searchByRooms() {
-    cout << CYAN << "Въведете броя на стаите, за които да бъде направено търсенето: " << RESET;
-    int roomsCount;
-    cin >> roomsCount;
+    if (propertyCount == 0) {
+        cout << YELLOW << "No properties entered into the system." << RESET << endl;
+        return;
+    }
+
+    int roomsCount = getValidNumericInput<int>(CYAN "Enter the number of rooms to search for: " RESET);
 
     Property tempProperties[MAX_PROPERTIES];
     int tempCount = 0;
     bool isFound = false;
 
-    // 1. Копираме всички имоти с дадения брой стаи във временен масив
+
     for (int i = 0; i < propertyCount; i++) {
         if (properties[i].rooms == roomsCount) {
             tempProperties[tempCount] = properties[i];
@@ -94,17 +93,17 @@ void searchByRooms() {
     }
 
     if (!isFound) {
-        cout << RED << "Не са намерени имоти с " << roomsCount << " броя стаи." << RESET << endl;
+        cout << RED << "No properties found with " << roomsCount << " rooms." << RESET << endl;
         return;
     }
 
-    // 2. Сортираме временния масив по цена в низходящ ред (от най-скъп към най-евтин)
+
     sortPropertiesArray(tempProperties, tempCount, false);
     
-    // 3. Извеждаме резултата
-    cout << YELLOW << "\n--- Резултати за имотите с " << roomsCount << " броя стаи (Сортирани) ---" << RESET << endl;
+
+    cout << YELLOW << "\n--- Results for properties with " << roomsCount << " rooms (Sorted by price) ---" << RESET << endl;
     for (int i = 0; i < tempCount; i++) {
-        cout << YELLOW << "--- Имот #" << i + 1 << RESET << endl;
+        cout << YELLOW << "--- Property #" << i + 1 << RESET << endl;
         displayPropertyDetails(tempProperties[i]);
     }
 }
