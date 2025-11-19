@@ -57,17 +57,16 @@ The application is built to meet the following specifications:
 
 ## 3. Project Structure
 
-The project is organized into a `src` directory for source files, an `include` directory for header files, and a `data` directory for data files. This separation of concerns improves code readability and maintainability.
+The project is organized into a `src` directory for source files, an `include` directory for header files, a `data` directory for data files, and a `lang` directory for language files. This separation of concerns improves code readability and maintainability.
 
 ```
-/solution
+/
 |-- /src
 |   |-- main.cpp
 |   |-- add.cpp
 |   |-- display.cpp
 |   |-- ...
 |-- /include
-|   |-- main.h
 |   |-- add.h
 |   |-- ...
 |-- /data
@@ -76,6 +75,9 @@ The project is organized into a `src` directory for source files, an `include` d
 |   |-- /recovery
 |   |   |-- sync.txt
 |   |   |-- sync.dat
+|-- /lang
+|   |-- en.txt
+|   |-- bg.txt
 ```
 
 ## 4. Implementation Details
@@ -94,42 +96,99 @@ The core data structure of the application is the `Property` struct, defined in 
 *   **Input Validation:** The system validates all numeric inputs to prevent crashes from non-numeric entries. It also sanitizes all string inputs to remove special characters (`|`) that could corrupt the data files.
 *   **Sorting Algorithm:** The project utilizes the **Quicksort** algorithm for sorting properties by price. This is an efficient, in-place sorting algorithm with an average time complexity of O(n log n).
 *   **User Interface:** The console UI is enhanced with colors to improve user experience, with different colors for prompts, success messages, and errors.
-*   **C-style Fundamentals:** The project adheres to fundamental C++ concepts, primarily using character arrays (`char[]`) for strings and C-style file I/O (`fopen`, `fwrite`, `fread`, `fprintf`, `fscanf`).
+*   **Mixed I/O Fundamentals:** The project utilizes a mix of C-style file I/O (`fopen`, `fwrite`, `fread`, `fprintf`, `fscanf`) and C++ file I/O (`ifstream`, `ofstream`). C-style functions are primarily used for binary data serialization and writing formatted reports, while C++ streams are employed for line-by-line reading in the localization and data recovery systems, offering a balance of performance and convenience.
 
 ## 5. File and Function Breakdown
 
 This section provides a detailed description of each file and its functions.
 
 ### `src/main.cpp`
-*   **Purpose:** Serves as the entry point of the application, handles menu navigation, and orchestrates calls to other modules.
+*   **Purpose:** Serves as the entry point of the application, handles language selection, and orchestrates calls to the main menu.
 *   **Functions:**
-    *   `main()`: The entry point. Calls `loadFromSyncTextFile()` to load data, prints a banner, and enters the `mainMenu()`.
-    *   `mainMenu()`: Displays the main menu. On exit, it calls `saveToSyncTextFile()` to ensure data persistence.
-    *   `sortMenu()`: Now includes an option to sort the main `properties` array by price, which also triggers an automatic data sync.
+    *   `main()`: Initializes the application, loads default translations, prompts the user to select a language, prints a banner, loads data from the recovery file, and enters the `mainMenu()`).
+
+### `src/menu.cpp`
+*   **Purpose:** Manages the user interface by displaying menus and handling user choices.
+*   **Functions:**
+    *   `mainMenu()`: The central navigation hub.
+    *   `addPropertyMenu()`, `deletePropertyMenu()`, `displayMenu()`, `searchMenu()`, `sortMenu()`, `fileMenu()`, `reportsMenu()`: Sub-menus for each specific functionality.
 
 ### `src/add.cpp`
-*   **Purpose:** Handles the logic for adding new properties to the system.
+*   **Purpose:** Handles the logic for adding new properties.
 *   **Functions:**
-    *   `addSingleProperty()`: Prompts the user for property details. It now uses validation and sanitization functions to ensure data integrity. After a successful addition, it calls `syncDataToRecoveryFiles()`.
-    *   `getValidIntInput()`, `getValidDoubleInput()`: Helper functions that ensure the user enters a valid number.
-    *   `sanitizeString()`: A helper function that removes `|` characters from string inputs to prevent file corruption.
+    *   `addSingleProperty()`, `addMultipleProperties()`: Guide the user through adding properties, with validation.
+    *   `getValidNumericInput<T>()`: Template function for robust numeric input.
+    *   `getValidStringInput()`: Handles string input with sanitization.
+    *   `isCapacityReached()`: Checks if the property array is full.
+    *   `sanitizeString()`: Removes `|` characters to prevent data file corruption.
 
 ### `src/update.cpp`
 *   **Purpose:** Handles modifications of existing property data.
 *   **Functions:**
-    *   `updateProperty()`: The main function for this module. It finds a property and presents a menu of fields to edit.
-    *   `updateRefNumber()`, `updateStringField()`, `updateNumericField()`, `updateStatus()`: These functions now call `syncDataToRecoveryFiles()` after every successful modification to ensure data is always saved.
+    *   `updateProperty()`: Main function to select a property and choose a field to edit.
+    *   `updateRefNumber()`, `updateStringField()`, `updateNumericField<T>()`, `updateStatus()`: Functions to update specific fields, with business logic for status changes.
+
+### `src/delete.cpp`
+*   **Purpose:** Manages the removal of properties from the system.
+*   **Functions:**
+    *   `DeleteProperty()`: Deletes a single property by its reference number.
+    *   `DeleteAllProperties()`: Clears all properties from the system after confirmation.
+
+### `src/display.cpp`
+*   **Purpose:** Responsible for presenting property information to the user.
+*   **Functions:**
+    *   `displayAllProperties()`, `displaySoldProperties()`, `displayLargestProperties()`: Display properties based on different criteria.
+    *   `displayPropertyDetails()`: Formats and prints the details of a single property.
+    *   `isPropertiesEmpty()`: Checks if there are any properties to display.
+
+### `src/search.cpp`
+*   **Purpose:** Implements search functionalities to filter properties.
+*   **Functions:**
+    *   `searchByBroker()`: Finds and displays properties managed by a specific broker.
+    *   `searchByRooms()`: Finds and displays properties with a specific number of rooms.
+
+### `src/sort.cpp`
+*   **Purpose:** Contains the implementation of the Quicksort algorithm for sorting properties.
+*   **Functions:**
+    *   `sortPropertiesArray()`: The main entry point for sorting.
+    *   `quickSort()`, `partition()`, `swap()`: The core components of the Quicksort algorithm.
+
+### `src/reports.cpp`
+*   **Purpose:** Generates analytical reports from the property data.
+*   **Functions:**
+    *   `mostExpensiveInArea()`, `averagePriceInArea()`: Provide market insights for specific areas.
+    *   `soldPercentagePerBroker()`: Calculates and displays sales performance for each broker.
 
 ### `src/file.cpp`
-*   **Purpose:** Manages all file I/O operations, now with a clear separation between user-facing files and internal recovery files.
+*   **Purpose:** Manages all file I/O operations, including backups and recovery.
 *   **Functions:**
-    *   `saveToBinaryFile()` / `loadFromBinaryFile()`: Handle manual backup and restore from `data/properties_backup.dat`.
-    *   `saveToUserFriendlyTextFile()`: Exports property data to a human-readable report in `data/properties_report.txt`.
-    *   `saveToSyncTextFile()` / `loadFromSyncTextFile()`: Handle automatic persistence to/from `data/recovery/sync.txt`.
-    *   `saveToRecoveryBinaryFile()`: Saves a binary backup for recovery to `data/recovery/sync.dat`.
-    *   `syncDataToRecoveryFiles()`: A new central function that calls both `saveToSyncTextFile()` and `saveToRecoveryBinaryFile()` to ensure a robust auto-save mechanism.
+    *   `saveToBinaryFile()`, `loadFromBinaryFile()`: Handle manual backups.
+    *   `saveToUserFriendlyTextFile()`: Exports data to a human-readable text report.
+    *   `saveToSyncTextFile()`, `loadFromSyncTextFile()`: Manage the automatic recovery system using a simple text format.
+    *   `saveToRecoveryBinaryFile()`: Saves a binary recovery file.
+    *   `syncDataToRecoveryFiles()`: A central function that updates all recovery files.
+    *   `confirmOverwrite()`: Prompts the user before overwriting an existing file.
 
-*(Descriptions for `display.cpp`, `search.cpp`, `sort.cpp`, `reports.cpp`, and `structs.cpp` remain largely the same as they were not part of the major refactoring.)*
+### `src/localization.cpp`
+*   **Purpose:** Manages multi-language support.
+*   **Functions:**
+    *   `loadTranslations()`: Reads key-value pairs from language files (`lang/*.txt`).
+    *   `getTranslatedString()`: Retrieves a translated string for a given key.
+    *   `selectLanguage()`: Prompts the user to choose a language at startup.
+
+### `src/utils.cpp`
+*   **Purpose:** Provides miscellaneous utility functions used throughout the application.
+*   **Functions:**
+    *   `clearConsole()`: Clears the terminal screen.
+    *   `printBanner()`: Displays the application's ASCII art banner.
+    *   `ensureDirectoryExists()`: Creates a directory if it doesn't exist.
+    *   `getMenuChoice()`: Gets and validates user input for menus.
+    *   `getConfirmation()`: Gets a 'y/n' confirmation from the user.
+
+### `src/structs.cpp`
+*   **Purpose:** Provides helper functions related to the core data structures.
+*   **Functions:**
+    *   `getStatusString()`: Converts the `Status` enum to a localized, human-readable string.
 
 ## 6. Project Statistics
 

@@ -1,23 +1,41 @@
-
+/**
+ * @file structs.cpp
+ * @brief Имплементация на помощни функции и глобални променливи, свързани с основните структури от данни, дефинирани в structs.h.
+ *
+ * Този файл съдържа предимно имплементацията за преобразуване на изброяването `Status`
+ * в локализирани низови представяния, използвайки модула за локализация
+ * за поддръжка на множество езици за потребителски съобщения за статус.
+ */
 
 #include "structs.h"
+#include "localization.h" 
 
-
-Property properties[MAX_PROPERTIES];
-
-
-int propertyCount = 0;
-
-
-const char* getStatusString(enum Status status) {
+/**
+ * @brief Преобразува стойност от изброявания тип Status в съответното ѝ локализирано низово представяне.
+ *
+ * Тази функция е от решаващо значение за показване на удобни за потребителя съобщения за статус в
+ * текущо избрания език. Тя използва функцията `getTranslatedString` от
+ * модула за локализация за извличане на подходящия низ въз основа на предварително дефинирани ключове.
+ * Този подход централизира всички специфични за езика текстове, правейки приложението
+ * лесно локализируемо, без да се променя основната логика.
+ *
+ * @param status Стойността на изброяването Status за преобразуване (SOLD, RESERVED, AVAILABLE).
+ * @return Постоянна референция към локализиран низ, представляващ статуса.
+ *         Връща локализиран низ за "неизвестен" статус, ако се срещне необработен статус.
+ */
+const std::string& getStatusString(enum Status status) {
     switch (status) {
         case SOLD:
-            return "Sold";
+            
+            return getTranslatedString("STATUS_SOLD_TEXT");
         case RESERVED:
-            return "Reserved";
+            
+            return getTranslatedString("STATUS_RESERVED_TEXT");
         case AVAILABLE:
-            return "Available";
+            
+            return getTranslatedString("STATUS_AVAILABLE_TEXT");
         default:
-            return "Unknown";
+            
+            return getTranslatedString("STATUS_UNKNOWN_TEXT");
     }
 }
